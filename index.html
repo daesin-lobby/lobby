@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DAESIN Lobby Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=Outfit:wght@200;300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f17;
+    --panel:#121826;
+    --panel-2:#161e2f;
+    --line:rgba(255,255,255,.07);
+    --ink:#eef2f8;
+    --ink-2:#a9b3c4;
+    --ink-3:#5f6b80;
+    --accent:#3d8bff;
+    --gold:#d8b26a;
+    --sun:#ff6b6b;
+    --sat:#6aa8ff;
+    --rain:#5fb4ff;
+    --snow:#cfe3ff;
+    --u: 10.8px; /* 실제 값은 스크립트가 화면 크기에 맞춰 설정 */
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;background:var(--bg);color:var(--ink);overflow:hidden}
+  body{
+    font-family:"Noto Sans KR",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(ellipse 60% 50% at 0% 0%, rgba(61,139,255,.10), transparent 60%),
+      radial-gradient(ellipse 50% 50% at 100% 100%, rgba(216,178,106,.06), transparent 60%),
+      var(--bg);
+  }
+  body.idle{cursor:none}
+  .stage{
+    height:100vh;width:100vw;transition:transform 2s;
+    padding:calc(var(--u)*3) calc(var(--u)*3.4);
+    display:grid;
+    grid-template-columns:1.45fr 1fr;
+    grid-template-rows:auto 1fr;
+    gap:calc(var(--u)*1.6);
+  }
+
+  header{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between}
+  .brand{display:flex;align-items:center}
+  .logo{height:calc(var(--u)*3.2);width:auto;display:block}
+  .brand .mark{margin-right:calc(var(--u)*1)}
+  .mark{
+    width:calc(var(--u)*3.4);height:calc(var(--u)*3.4);border-radius:calc(var(--u)*.7);
+    background:linear-gradient(135deg,#2f6fe0,#5aa2ff);
+    display:grid;place-items:center;
+    font-family:Outfit,sans-serif;font-weight:600;font-size:calc(var(--u)*1.45);color:#fff;
+  }
+  .wordmark{font-family:Outfit,sans-serif;font-weight:600;font-size:calc(var(--u)*1.8);letter-spacing:.32em}
+  .head-date{font-size:calc(var(--u)*1.7);color:var(--ink-2);font-weight:300}
+  .head-date b{color:var(--ink);font-weight:500}
+
+  .card{
+    background:linear-gradient(180deg,var(--panel-2),var(--panel));
+    border:1px solid var(--line);
+    border-radius:calc(var(--u)*1.4);
+    position:relative;overflow:hidden;
+  }
+  .label{font-family:Outfit,sans-serif;font-size:calc(var(--u)*.9);letter-spacing:.28em;text-transform:uppercase;color:var(--ink-3)}
+
+  /* 시계 */
+  .left,.right{display:grid;gap:calc(var(--u)*1.6);min-height:0}
+  .left{grid-template-rows:auto 1fr}
+  .right{grid-template-rows:1fr auto}
+  .clock{padding:calc(var(--u)*1.5) calc(var(--u)*2.8) calc(var(--u)*1.6)}
+  .time-row{display:flex;align-items:flex-end;margin-top:calc(var(--u)*.8)}
+  .time-row .ampm,.time-row .hhmm{margin-right:calc(var(--u)*1.4)}
+  .ampm{font-family:Outfit,sans-serif;font-size:calc(var(--u)*2.8);color:var(--accent);padding-bottom:calc(var(--u)*1.5);letter-spacing:.04em}
+  .hhmm{font-family:Outfit,sans-serif;font-weight:200;font-size:calc(var(--u)*9.6);line-height:.86;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+  .hhmm .colon{opacity:.35}
+  .ss{font-family:Outfit,sans-serif;font-weight:300;font-size:calc(var(--u)*2.8);color:var(--ink-3);padding-bottom:calc(var(--u)*1.4);font-variant-numeric:tabular-nums;width:2.2ch}
+  .date-line{margin-top:calc(var(--u)*1.2);font-size:calc(var(--u)*1.7);color:var(--ink-2);font-weight:300}
+  .date-line b{color:var(--ink);font-weight:500}
+
+  /* 날짜 (시계 아래) */
+  .clock{display:flex;align-items:center}
+  .clock-main{flex:1;min-width:0}
+  .clock-date{text-align:right;padding-left:calc(var(--u)*1.6);border-left:1px solid var(--line);margin-left:calc(var(--u)*1.6)}
+  .clock-date .yr{font-family:Outfit,sans-serif;font-weight:300;font-size:calc(var(--u)*1.3);color:var(--ink-3);letter-spacing:.12em}
+  .clock-date .md{font-size:calc(var(--u)*3.4);font-weight:700;letter-spacing:-.02em;margin-top:calc(var(--u)*.3);white-space:nowrap}
+  .clock-date .dw{
+    display:inline-block;margin-top:calc(var(--u)*.7);
+    font-size:calc(var(--u)*2.2);font-weight:700;color:#fff;background:var(--accent);
+    padding:.15em .7em;border-radius:.4em
+  }
+  .clock-date .dw.sun{background:#e05252} .clock-date .dw.sat{background:#3f7fe0}
+
+  /* 웰컴보드 (슬라이드) */
+  .welcome{padding:calc(var(--u)*2.4) calc(var(--u)*3.2);display:flex;flex-direction:column;min-height:0}
+  .welcome::before{content:"";position:absolute;top:0;right:0;bottom:0;left:0;background:radial-gradient(ellipse 70% 70% at 100% 0%, rgba(216,178,106,.13), transparent 60%);pointer-events:none}
+  .welcome.vip{border-color:rgba(216,178,106,.38)}
+  .welcome .label{color:var(--gold);display:flex;justify-content:space-between}
+  .w-slide{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden;transition:opacity .6s;margin-top:calc(var(--u)*.6)}
+  .w-slide > :first-child{margin-top:auto}
+  .w-slide > :last-child{margin-bottom:auto}
+  .w-slide.out{opacity:0}
+  .w-title{font-weight:300;font-size:calc(var(--u)*2.1);color:var(--gold)}
+  .w-company{font-size:calc(var(--u)*2.6);font-weight:500;margin-top:calc(var(--u)*1);word-break:keep-all}
+  .w-guest{font-size:calc(var(--u)*var(--gs,5)*var(--ws,1));font-weight:700;line-height:1.2;margin-top:calc(var(--u)*.7);word-break:keep-all}
+  .w-guest .g + .g{margin-top:.25em}
+  .w-guest .g small{font-size:.62em;font-weight:500;color:var(--ink-2);margin-left:.3em}
+  .w-guest.cols2{display:grid;grid-template-columns:1fr 1fr;grid-column-gap:calc(var(--u)*2.4);grid-row-gap:.25em;align-content:start}
+  .w-guest.cols2 .g + .g{margin-top:0}
+  .w-msg{font-size:calc(var(--u)*1.6);color:var(--ink-2);margin-top:calc(var(--u)*1.4);font-weight:300;line-height:1.6;word-break:keep-all;max-width:44ch}
+  .w-default .w-guest{font-size:calc(var(--u)*3.8);font-weight:500}
+  .w-default .w-title{font-family:Outfit,sans-serif;letter-spacing:.04em}
+  .w-dots{display:flex}
+  .w-dots i{width:calc(var(--u)*.6);height:calc(var(--u)*.6);border-radius:50%;background:rgba(216,178,106,.25);margin-left:calc(var(--u)*.5)}
+  .w-dots i.on{background:var(--gold)}
+
+  /* 달력 */
+  .calendar{padding:calc(var(--u)*1.8) calc(var(--u)*2.4);display:flex;flex-direction:column;min-height:0}
+  .cal-head{display:flex;align-items:baseline;justify-content:space-between}
+  .cal-month{font-family:Outfit,"Noto Sans KR",sans-serif;font-weight:300;font-size:calc(var(--u)*3)}
+  .cal-month small{font-family:Outfit,sans-serif;font-size:.42em;color:var(--ink-3);margin-left:.5em;letter-spacing:.2em}
+  .cal-grid{flex:1;display:grid;grid-template-columns:repeat(7,1fr);grid-auto-rows:1fr;margin-top:calc(var(--u)*1);gap:calc(var(--u)*.3)}
+  .dow{font-size:calc(var(--u)*1.05);color:var(--ink-3);text-align:center;align-self:center;font-weight:500}
+  .dow.sun{color:var(--sun)} .dow.sat{color:var(--sat)}
+  .day{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Outfit,sans-serif;font-size:calc(var(--u)*1.7);font-weight:300;border-radius:calc(var(--u)*.8);font-variant-numeric:tabular-nums}
+  .day.sun,.day.hol{color:var(--sun)} .day.sat{color:var(--sat)}
+  .day.other{opacity:.18}
+  .day.past{opacity:.45}
+  .day .hn{font-family:"Noto Sans KR";font-size:calc(var(--u)*.72);margin-top:.15em;opacity:.85;white-space:nowrap}
+  .day.today{background:var(--accent);color:#fff;font-weight:600;box-shadow:0 0 calc(var(--u)*2) rgba(61,139,255,.45);opacity:1}
+
+  /* 날씨 (달력과 같은 폭) */
+  .weather{padding:calc(var(--u)*1.6) calc(var(--u)*2.2) calc(var(--u)*1.7)}
+  .wx-top{display:flex;align-items:center}
+  .wx-now{display:flex;align-items:center;margin-right:calc(var(--u)*1.6)}
+  .wx-now .wx-icon{margin-right:calc(var(--u)*1)}
+  .wx-icon{width:calc(var(--u)*5);height:calc(var(--u)*5);flex:none}
+  .wx-icon svg{width:100%;height:100%}
+  .wx-temp{font-family:Outfit,sans-serif;font-weight:200;font-size:calc(var(--u)*5.4);line-height:1;letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .wx-temp sup{font-size:.4em;font-weight:300;vertical-align:top;position:relative;top:.25em;margin-left:.04em;color:var(--ink-2)}
+  .wx-cond .loc{font-size:calc(var(--u)*.95);color:var(--ink-3);letter-spacing:.04em}
+  .wx-cond .cond{font-size:calc(var(--u)*1.9);font-weight:500;margin-top:calc(var(--u)*.2);white-space:nowrap}
+  .wx-cond .hilo{font-family:Outfit,"Noto Sans KR",sans-serif;font-size:calc(var(--u)*1.15);color:var(--ink-2);margin-top:calc(var(--u)*.3);white-space:nowrap}
+  .wx-cond .hilo .hi{color:#ff9b8a} .wx-cond .hilo .lo{color:#8ec0ff}
+  .wx-meta{margin-left:auto;display:flex;flex-direction:column}
+  .wx-meta div + div{margin-top:calc(var(--u)*.3)}
+  .wx-meta div{display:flex;align-items:baseline;white-space:nowrap}
+  .wx-meta .k{font-size:calc(var(--u)*.95);color:var(--ink-3);width:2.8em;margin-right:calc(var(--u)*.4)}
+  .wx-meta .v{font-family:Outfit,"Noto Sans KR",sans-serif;font-size:calc(var(--u)*1.3)}
+
+  .wx-bottom{display:flex;align-items:stretch;margin-top:calc(var(--u)*1.4)}
+  .wx-precip{
+    flex:none;width:calc(var(--u)*14.5);margin-right:calc(var(--u)*1.2);
+    padding:calc(var(--u)*.9) calc(var(--u)*1.2);border-radius:calc(var(--u)*1);
+    background:rgba(255,255,255,.03);border:1px solid var(--line);
+    display:flex;flex-direction:column;justify-content:center;
+  }
+  .wx-precip .k{font-size:calc(var(--u)*.9);color:var(--ink-3)}
+  .wx-precip .v{font-size:calc(var(--u)*1.6);font-weight:700;margin-top:calc(var(--u)*.2)}
+  .wx-precip .d{font-size:calc(var(--u)*.95);color:var(--ink-2);margin-top:calc(var(--u)*.25);line-height:1.35}
+  .wx-precip.rain{background:rgba(95,180,255,.10);border-color:rgba(95,180,255,.35)}
+  .wx-precip.rain .v{color:var(--rain)}
+  .wx-precip.snow{background:rgba(207,227,255,.10);border-color:rgba(207,227,255,.35)}
+  .wx-precip.snow .v{color:var(--snow)}
+
+  .wx-hours{flex:1;display:flex;justify-content:space-between}
+  .hr{display:flex;flex-direction:column;align-items:center;flex:1}
+  .hr .t{font-size:calc(var(--u)*.9);color:var(--ink-3)}
+  .hr .i{width:calc(var(--u)*2.4);height:calc(var(--u)*2.4);margin:calc(var(--u)*.3) 0}
+  .hr .i svg{width:100%;height:100%}
+  .hr .c{font-family:Outfit,sans-serif;font-size:calc(var(--u)*1.25)}
+  .hr .p{font-family:Outfit,sans-serif;font-size:calc(var(--u)*.85);color:var(--rain);margin-top:.1em;min-height:1.2em}
+  .wx-foot{position:absolute;right:calc(var(--u)*1.4);top:calc(var(--u)*.8);font-size:calc(var(--u)*.8);color:var(--ink-3)}
+
+  /* 컨트롤 */
+  .ctrl{position:fixed;right:calc(var(--u)*1);bottom:calc(var(--u)*1);display:flex;opacity:.15;transition:opacity .3s;z-index:5}
+  .ctrl:hover{opacity:1}
+  body.idle .ctrl{opacity:0}
+  .ctrl button + button{margin-left:6px}
+  .ctrl button:focus{outline:3px solid var(--accent);opacity:1}
+  .ctrl:focus-within{opacity:1}
+  .ctrl button{background:var(--panel-2);color:var(--ink-2);border:1px solid var(--line);border-radius:8px;font:500 12px "Noto Sans KR";padding:7px 10px;cursor:pointer}
+
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <div class="brand"><img class="logo" alt="DAESIN" src="data:image/png;base64,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"></div>
+  </header>
+
+  <section class="left">
+    <div class="card clock">
+     <div class="clock-main">
+      <div class="label">Current Time · KST</div>
+      <div class="time-row">
+        <div class="ampm" id="ampm">AM</div>
+        <div class="hhmm" id="hhmm">00<span class="colon">:</span>00</div>
+        <div class="ss" id="ss">00</div>
+      </div>
+     </div>
+      <div class="clock-date"><div class="yr" id="cYr"></div><div class="md" id="cMd"></div><div class="dw" id="cDw"></div></div>
+    </div>
+
+    <div class="card welcome" id="welcome">
+      <div class="label"><span>Welcome</span><span class="w-dots" id="wDots"></span></div>
+      <div class="w-slide" id="wSlide">
+        <div class="w-title" id="wTitle"></div>
+        <div class="w-company" id="wCompany"></div>
+        <div class="w-guest" id="wGuest"></div>
+        <div class="w-msg" id="wMsg"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="right">
+  <div class="card calendar">
+    <div class="cal-head">
+      <div class="cal-month" id="calMonth"></div>
+      <div class="label">Calendar</div>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+
+  <div class="card weather" id="weather">
+   <div class="wx-top">
+    <div class="wx-now">
+      <div class="wx-icon" id="wxIcon"></div>
+      <div class="wx-temp" id="wxTemp">--<sup>°C</sup></div>
+    </div>
+    <div class="wx-cond">
+      <div class="loc" id="wxLoc">날씨</div>
+      <div class="cond" id="wxCond">불러오는 중…</div>
+      <div class="hilo" id="wxHiLo"></div>
+    </div>
+    <div class="wx-meta">
+      <div><span class="k">체감</span><span class="v" id="wxFeel">-</span></div>
+      <div><span class="k">습도</span><span class="v" id="wxHum">-</span></div>
+      <div><span class="k">바람</span><span class="v" id="wxWind">-</span></div>
+    </div>
+   </div>
+   <div class="wx-bottom">
+    <div class="wx-precip" id="wxPrecip">
+      <div class="k">강수 · 강설</div>
+      <div class="v" id="wxPv">-</div>
+      <div class="d" id="wxPd"></div>
+    </div>
+    <div class="wx-hours" id="wxHours"></div>
+   </div>
+  </div>
+  </section>
+</div>
+
+<div class="ctrl">
+  <button id="fsBtn" type="button">전체화면</button>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var DOW = ["일","월","화","수","목","금","토"];
+  var MONTH_EN = ["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY","AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+
+  /* 공휴일: MM-DD는 매년, YYYY-MM-DD는 해당 연도만 */
+  var HOL_FIXED = {"01-01":"신정","03-01":"삼일절","05-05":"어린이날","06-06":"현충일","08-15":"광복절","10-03":"개천절","10-09":"한글날","12-25":"성탄절"};
+  var HOL_YEAR = {
+    "2026-02-16":"설날","2026-02-17":"설날","2026-02-18":"설날","2026-03-02":"대체공휴일",
+    "2026-05-24":"부처님오신날","2026-05-25":"대체공휴일","2026-06-03":"지방선거","2026-08-17":"대체공휴일",
+    "2026-09-24":"추석","2026-09-25":"추석","2026-09-26":"추석","2026-10-05":"대체공휴일"
+  };
+
+
+  /* 표시 데이터: 같은 폴더의 board.json (편집 페이지에서 저장) */
+  var state = {
+    title: "방문을 진심으로 환영합니다",
+    message: "귀한 걸음 해주셔서 감사합니다.",
+    visits: [],
+    loc: {name:"안산 성곡동", lat:37.3110, lon:126.7450}
+  };
+
+  function pad(n){ return (n<10?"0":"")+n; }
+  function kst(d){ d = d || new Date(); return new Date(d.getTime() + (d.getTimezoneOffset()+540)*60000); }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  // "2026-11-18T13:00" (한국시간) → ms
+  function kstMs(v){
+    if(!v) return NaN;
+    var iso = /[zZ]|[+-]\d\d:?\d\d$/.test(v) ? v : (v.length===16 ? v+":00" : v)+"+09:00";
+    return new Date(iso).getTime();
+  }
+
+  /* ---------- 화면 크기 단위 (오래된 TV 브라우저 대응) ---------- */
+  function fitUnit(){
+    var u = Math.min(window.innerWidth/100, window.innerHeight*1.78/100);
+    document.documentElement.style.setProperty("--u", u.toFixed(2)+"px");
+  }
+  fitUnit(); window.addEventListener("resize", function(){ fitUnit(); setTimeout(fitWelcome, 50); });
+
+  /* ---------- 시계 + 날짜 ---------- */
+  var lastDateKey = "";
+  function tick(){
+    var n = kst();
+    var h = n.getHours(), m = n.getMinutes(), s = n.getSeconds();
+    $("ampm").textContent = h < 12 ? "AM" : "PM";
+    $("hhmm").innerHTML = pad(h)+'<span class="colon">:</span>'+pad(m);
+    $("ss").textContent = pad(s);
+    var key = n.getFullYear()+"-"+n.getMonth()+"-"+n.getDate();
+    if(key !== lastDateKey){
+      lastDateKey = key;
+      var dw = n.getDay();
+      $("cMd").textContent = (n.getMonth()+1)+"월 "+n.getDate()+"일";
+      $("cDw").textContent = DOW[dw]+"요일";
+      $("cDw").className = "dw"+(dw===0?" sun":dw===6?" sat":"");
+      $("cYr").textContent = n.getFullYear();
+      renderCalendar(n);
+    }
+    if(s % 15 === 0) renderWelcome(false);
+  }
+
+  /* ---------- 달력 ---------- */
+  function holidayOf(y,m,d){
+    var md = pad(m+1)+"-"+pad(d);
+    return HOL_YEAR[y+"-"+md] || HOL_FIXED[md] || "";
+  }
+  function renderCalendar(now){
+    var y = now.getFullYear(), m = now.getMonth(), today = now.getDate();
+    $("calMonth").innerHTML = (m+1)+"월<small>"+MONTH_EN[m]+" "+y+"</small>";
+    var g = $("calGrid"); g.innerHTML = "";
+    DOW.forEach(function(d,i){
+      var el = document.createElement("div");
+      el.className = "dow"+(i===0?" sun":i===6?" sat":"");
+      el.textContent = d; g.appendChild(el);
+    });
+    var first = new Date(y,m,1).getDay();
+    var days = new Date(y,m+1,0).getDate();
+    var prevDays = new Date(y,m,0).getDate();
+    var cells = Math.ceil((first+days)/7)*7;
+    for(var i=0;i<cells;i++){
+      var el = document.createElement("div");
+      var col = i%7, cls = "day";
+      if(i<first){ el.textContent = prevDays-first+1+i; cls+=" other"; }
+      else if(i>=first+days){ el.textContent = i-first-days+1; cls+=" other"; }
+      else {
+        var d = i-first+1, hn = holidayOf(y,m,d);
+        if(hn) cls+=" hol";
+        if(d===today) cls+=" today"; else if(d<today) cls+=" past";
+        el.innerHTML = d + (hn?'<span class="hn">'+hn+'</span>':"");
+      }
+      if(col===0) cls+=" sun";
+      if(col===6) cls+=" sat";
+      el.className = cls;
+      g.appendChild(el);
+    }
+  }
+
+  /* ---------- 웰컴보드 슬라이드쇼 ---------- */
+  var SLIDE_MS = 12000;
+  var slideIdx = 0, slideKey = "";
+  function activeVisits(){
+    var now = Date.now();
+    return (state.visits||[]).filter(function(v){
+      if(!v || !v.guests || !v.guests.some(function(g){ return g && (g.name||"").trim(); })) return false;
+      var st = kstMs(v.start), en = kstMs(v.end);
+      if(!isNaN(st) && now < st) return false;
+      if(!isNaN(en) && now > en) return false;
+      return true;
+    });
+  }
+  function honor(g){
+    var name = (g.name||"").trim(), t = (g.title||"").trim();
+    if(!t) return esc(name)+" 님";
+    if(!/님$/.test(t)) t += "님";
+    return esc(name)+"<small>"+esc(t)+"</small>";
+  }
+  function paintSlide(list){
+    var box = $("welcome"), g = $("wGuest");
+    g.style.setProperty("--ws", 1);
+    if(!list.length){
+      box.className = "card welcome w-default";
+      $("wTitle").textContent = "Welcome to DAESIN";
+      $("wCompany").textContent = "";
+      g.className = "w-guest"; g.style.removeProperty("--gs");
+      g.textContent = "대신을 찾아주셔서 감사합니다";
+      $("wMsg").textContent = "오늘도 좋은 하루 보내세요.";
+      $("wDots").innerHTML = "";
+      return;
+    }
+    var v = list[slideIdx % list.length];
+    var guests = v.guests.filter(function(x){ return x && (x.name||"").trim(); });
+    box.className = "card welcome vip";
+    $("wTitle").textContent = state.title || "방문을 진심으로 환영합니다";
+    $("wCompany").textContent = v.company || "";
+    var n = guests.length;
+    g.className = "w-guest" + (n >= 2 ? " cols2" : "");
+    g.style.setProperty("--gs", n<=1 ? 5 : n<=4 ? 3.8 : n<=6 ? 3.3 : 2.8);
+    g.innerHTML = guests.map(function(x){ return '<div class="g">'+honor(x)+'</div>'; }).join("");
+    $("wMsg").textContent = (v.message||"").trim() || state.message || "";
+    var dots = "";
+    if(list.length > 1) for(var i=0;i<list.length;i++) dots += '<i'+(i===slideIdx%list.length?' class="on"':'')+'></i>';
+    $("wDots").innerHTML = dots;
+    fitWelcome();
+  }
+  // 방문 일정이 바뀌었을 때만 다시 그림 (advance=true면 다음 슬라이드로)
+  function renderWelcome(advance){
+    var list = activeVisits();
+    var key = JSON.stringify(list)+"|"+state.title+"|"+state.message;
+    if(!advance && key === slideKey) return;
+    if(key !== slideKey){ slideIdx = 0; slideKey = key; paintSlide(list); return; }
+    if(list.length < 2) return;
+    var el = $("wSlide");
+    el.classList.add("out");
+    setTimeout(function(){ slideIdx = (slideIdx+1) % list.length; paintSlide(list); el.classList.remove("out"); }, 600);
+  }
+  setInterval(function(){ renderWelcome(true); }, SLIDE_MS);
+
+  // 칸을 넘치면 이름 글자만 단계적으로 줄임
+  function fitWelcome(){
+    var box = $("wSlide"), g = $("wGuest"), ws = 1;
+    g.style.setProperty("--ws", 1);
+    while((box.scrollHeight > box.clientHeight + 1 || g.scrollWidth > g.clientWidth + 1) && ws > 0.4){
+      ws = Math.round((ws - 0.05)*100)/100;
+      g.style.setProperty("--ws", ws);
+    }
+  }
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ fitWelcome(); });
+
+  /* ---------- 날씨 (Open-Meteo, 키 불필요) ---------- */
+  var ICON = {
+    sun:'<svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="12" fill="#ffc94d"/><g stroke="#ffc94d" stroke-width="3.5" stroke-linecap="round"><path d="M32 6v7M32 51v7M6 32h7M51 32h7M13.6 13.6l5 5M45.4 45.4l5 5M13.6 50.4l5-5M45.4 18.6l5-5"/></g></svg>',
+    moon:'<svg viewBox="0 0 64 64"><path d="M40 10a22 22 0 1 0 14 34A18 18 0 0 1 40 10z" fill="#e6ecff"/></svg>',
+    partly:'<svg viewBox="0 0 64 64"><circle cx="24" cy="24" r="10" fill="#ffc94d"/><g stroke="#ffc94d" stroke-width="3" stroke-linecap="round"><path d="M24 4v5M4 24h5M9.9 9.9l3.5 3.5M38.1 9.9l-3.5 3.5"/></g><path d="M22 52h28a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 22 52z" fill="#dfe6f2"/></svg>',
+    partlyNight:'<svg viewBox="0 0 64 64"><path d="M30 6a14 14 0 1 0 10 22A11 11 0 0 1 30 6z" fill="#e6ecff"/><path d="M22 54h28a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 22 54z" fill="#b8c3d6"/></svg>',
+    cloud:'<svg viewBox="0 0 64 64"><path d="M18 50h30a12 12 0 0 0 0-24 16 16 0 0 0-30.4 4.6A10 10 0 0 0 18 50z" fill="#b8c3d6"/></svg>',
+    fog:'<svg viewBox="0 0 64 64"><path d="M18 36h30a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 18 36z" fill="#9aa6ba"/><g stroke="#9aa6ba" stroke-width="3.5" stroke-linecap="round"><path d="M12 44h40M18 52h30"/></g></svg>',
+    rain:'<svg viewBox="0 0 64 64"><path d="M18 38h30a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 18 38z" fill="#b8c3d6"/><g stroke="#5fb4ff" stroke-width="3.5" stroke-linecap="round"><path d="M22 44l-3 8M33 44l-3 8M44 44l-3 8"/></g></svg>',
+    snow:'<svg viewBox="0 0 64 64"><path d="M18 38h30a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 18 38z" fill="#c9d3e3"/><g fill="#eaf3ff"><circle cx="21" cy="47" r="3"/><circle cx="32" cy="53" r="3"/><circle cx="43" cy="47" r="3"/><circle cx="27" cy="58" r="2.4"/><circle cx="39" cy="59" r="2.4"/></g></svg>',
+    sleet:'<svg viewBox="0 0 64 64"><path d="M18 38h30a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 18 38z" fill="#c0cad9"/><path d="M23 44l-3 8M41 44l-3 8" stroke="#5fb4ff" stroke-width="3.5" stroke-linecap="round"/><circle cx="31" cy="50" r="3" fill="#eaf3ff"/></svg>',
+    storm:'<svg viewBox="0 0 64 64"><path d="M18 38h30a10 10 0 0 0 0-20 14 14 0 0 0-26.6 4A8 8 0 0 0 18 38z" fill="#8f9bb0"/><path d="M34 40l-8 12h7l-4 10 11-14h-7l4-8z" fill="#ffd257"/></svg>'
+  };
+  // WMO 날씨 코드 → [설명, 아이콘, 종류]
+  function wmo(code, isDay){
+    var c = Number(code);
+    if(c===0) return ["맑음", isDay?"sun":"moon", ""];
+    if(c===1) return ["대체로 맑음", isDay?"partly":"partlyNight", ""];
+    if(c===2) return ["구름 조금", isDay?"partly":"partlyNight", ""];
+    if(c===3) return ["흐림","cloud",""];
+    if(c===45||c===48) return ["안개","fog",""];
+    if(c===51||c===53||c===55) return ["이슬비","rain","rain"];
+    if(c===56||c===57) return ["어는 이슬비","sleet","rain"];
+    if(c===61) return ["약한 비","rain","rain"];
+    if(c===63) return ["비","rain","rain"];
+    if(c===65) return ["강한 비","rain","rain"];
+    if(c===66||c===67) return ["어는 비","sleet","rain"];
+    if(c===71) return ["약한 눈","snow","snow"];
+    if(c===73) return ["눈","snow","snow"];
+    if(c===75) return ["많은 눈","snow","snow"];
+    if(c===77) return ["싸락눈","snow","snow"];
+    if(c===80) return ["약한 소나기","rain","rain"];
+    if(c===81) return ["소나기","rain","rain"];
+    if(c===82) return ["강한 소나기","rain","rain"];
+    if(c===85||c===86) return ["소낙눈","snow","snow"];
+    if(c===95) return ["뇌우","storm","rain"];
+    if(c===96||c===99) return ["뇌우·우박","storm","rain"];
+    return ["-","cloud",""];
+  }
+  function windText(ms){
+    if(ms < 1) return "고요";
+    return Math.round(ms*10)/10+" m/s";
+  }
+  function hourLabel(h){ return (h<12?"AM ":"PM ")+pad(h)+"시"; }
+
+  var lastWx = null;
+  function renderWeather(d){
+    var cur = d.current, daily = d.daily, hourly = d.hourly;
+    var info = wmo(cur.weather_code, cur.is_day);
+    $("wxIcon").innerHTML = ICON[info[1]];
+    $("wxTemp").innerHTML = Math.round(cur.temperature_2m)+"<sup>°C</sup>";
+    $("wxCond").textContent = info[0];
+    $("wxHiLo").innerHTML = '최고 <span class="hi">'+Math.round(daily.temperature_2m_max[0])+'°</span> &nbsp;/&nbsp; 최저 <span class="lo">'+Math.round(daily.temperature_2m_min[0])+'°</span>';
+    $("wxFeel").textContent = Math.round(cur.apparent_temperature)+"°";
+    $("wxHum").textContent = Math.round(cur.relative_humidity_2m)+"%";
+    $("wxWind").textContent = windText(cur.wind_speed_10m);
+
+    // 강수·강설 상태
+    var box = $("wxPrecip"), v, desc = "";
+    var snowCm = Number(cur.snowfall)||0, precMm = Number(cur.precipitation)||0;
+    var nowIso = cur.time; // "YYYY-MM-DDTHH:MM" (KST)
+    var startIdx = 0;
+    for(var i=0;i<hourly.time.length;i++){ if(hourly.time[i] > nowIso){ startIdx = i; break; } }
+    if(snowCm > 0 || info[2]==="snow"){
+      box.className = "wx-precip snow";
+      v = "눈 내리는 중";
+      desc = snowCm>0 ? "시간당 적설 "+(Math.round(snowCm*10)/10)+" cm" : info[0];
+    } else if(precMm > 0 || info[2]==="rain"){
+      box.className = "wx-precip rain";
+      v = "비 내리는 중";
+      desc = precMm>0 ? "시간당 강수 "+(Math.round(precMm*10)/10)+" mm" : info[0];
+    } else {
+      box.className = "wx-precip";
+      v = "강수 없음";
+      // 앞으로 12시간 안에 비/눈 예보가 있는지
+      for(var j=startIdx;j<Math.min(startIdx+12,hourly.time.length);j++){
+        var hi = wmo(hourly.weather_code[j], 1);
+        if(hi[2] && (hourly.precipitation_probability[j]||0) >= 40){
+          var hh = parseInt(hourly.time[j].slice(11,13),10);
+          desc = hourLabel(hh)+"경 "+(hi[2]==="snow"?"눈":"비")+" 예보 ("+hourly.precipitation_probability[j]+"%)";
+          break;
+        }
+      }
+      if(!desc) desc = "오늘 강수확률 "+(daily.precipitation_probability_max[0]||0)+"%";
+    }
+    $("wxPv").textContent = v;
+    $("wxPd").textContent = desc;
+
+    // 시간별 6칸
+    var wrap = $("wxHours"); wrap.innerHTML = "";
+    for(var k=startIdx;k<Math.min(startIdx+6,hourly.time.length);k++){
+      var hh2 = parseInt(hourly.time[k].slice(11,13),10);
+      var isDay = hourly.is_day ? hourly.is_day[k] : (hh2>=7&&hh2<18?1:0);
+      var w2 = wmo(hourly.weather_code[k], isDay);
+      var p = hourly.precipitation_probability[k]||0;
+      var el = document.createElement("div");
+      el.className = "hr";
+      el.innerHTML = '<div class="t">'+pad(hh2)+'시</div><div class="i">'+ICON[w2[1]]+'</div><div class="c">'+Math.round(hourly.temperature_2m[k])+'°</div><div class="p">'+(p>=20?p+"%":"")+'</div>';
+      wrap.appendChild(el);
+    }
+    var t = kst();
+    $("wxLoc").textContent = state.loc.name+" · "+pad(t.getHours())+":"+pad(t.getMinutes())+" 기준";
+  }
+  function fetchWeather(){
+    var L = state.loc;
+    var url = "https://api.open-meteo.com/v1/forecast?latitude="+L.lat+"&longitude="+L.lon+
+      "&current=temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,rain,showers,snowfall,weather_code,wind_speed_10m,is_day"+
+      "&hourly=temperature_2m,precipitation_probability,weather_code,is_day"+
+      "&daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max"+
+      "&wind_speed_unit=ms&timezone=Asia%2FSeoul&forecast_days=2";
+    fetch(url).then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function(d){ lastWx = d; renderWeather(d); })
+      .catch(function(){
+        if(!lastWx){ $("wxCond").textContent = "날씨 정보 연결 중…"; $("wxLoc").textContent = state.loc.name; }
+        if(lastWx) $("wxLoc").textContent = state.loc.name+" · 연결 재시도 중";
+        setTimeout(fetchWeather, 60*1000);
+      });
+  }
+
+
+  /* ---------- board.json 불러오기 (1분마다) ---------- */
+  var boardSig = "";
+  function pollBoard(){
+    if(location.protocol === "file:") return;
+    fetch("board.json?t="+Date.now(), {cache:"no-store"})
+      .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+      .then(function(j){
+        var sig = JSON.stringify(j);
+        if(sig === boardSig) return;
+        boardSig = sig;
+        var oldLoc = JSON.stringify(state.loc);
+        if(typeof j.title === "string") state.title = j.title;
+        if(typeof j.message === "string") state.message = j.message;
+        state.visits = Array.isArray(j.visits) ? j.visits : [];
+        if(j.loc && isFinite(j.loc.lat) && isFinite(j.loc.lon)) state.loc = {name:j.loc.name||"", lat:+j.loc.lat, lon:+j.loc.lon};
+        renderWelcome(false);
+        if(JSON.stringify(state.loc) !== oldLoc) fetchWeather();
+      }).catch(function(){});
+  }
+
+  /* ---------- 전체화면 / 커서 숨김 ---------- */
+  $("fsBtn").addEventListener("click", function(){
+    try{
+      if(document.fullscreenElement) document.exitFullscreen();
+      else { var p = document.documentElement.requestFullscreen(); if(p&&p.catch) p.catch(function(){}); }
+    }catch(e){}
+  });
+  var idleT;
+  function wake(){ document.body.classList.remove("idle"); clearTimeout(idleT); idleT = setTimeout(function(){ document.body.classList.add("idle"); }, 4000); }
+  ["mousemove","mousedown","touchstart","keydown"].forEach(function(ev){ document.addEventListener(ev, wake, {passive:true}); });
+  wake();
+
+  /* ---------- 화면 잔상(번인) 방지 ---------- */
+  setInterval(function(){
+    var x = Math.round(Math.random()*8-4), y = Math.round(Math.random()*8-4);
+    document.querySelector(".stage").style.transform = "translate("+x+"px,"+y+"px)";
+  }, 5*60*1000);
+
+  /* ---------- 시작 ---------- */
+  tick(); setInterval(tick, 1000);
+  renderWelcome(false);
+  fetchWeather(); setInterval(fetchWeather, 10*60*1000);
+  pollBoard(); setInterval(pollBoard, 60*1000);
+  var bootAt = Date.now();
+  setInterval(function(){ var n = kst(); if(n.getHours()===4 && n.getMinutes()===0 && Date.now()-bootAt > 120000) location.reload(); }, 15000);
+})();
+</script>
+</body>
+</html>
