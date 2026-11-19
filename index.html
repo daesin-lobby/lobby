@@ -83,7 +83,7 @@
   /* 날짜 (시계 아래) */
   .clock{display:flex;align-items:center}
   .clock-main{flex:1;min-width:0}
-  .clock-date{text-align:right;padding-left:calc(var(--u)*1.6);border-left:1px solid var(--line);margin-left:calc(var(--u)*1.6)}
+  .clock-date{text-align:right;margin-left:calc(var(--u)*2)}
   .clock-date .yr{font-family:Outfit,sans-serif;font-weight:300;font-size:calc(var(--u)*1.3);color:var(--ink-3);letter-spacing:.12em}
   .clock-date .md{font-size:calc(var(--u)*3.4);font-weight:700;letter-spacing:-.02em;margin-top:calc(var(--u)*.3);white-space:nowrap}
   .clock-date .dw{
@@ -109,6 +109,12 @@
   .w-guest .g small{font-size:.62em;font-weight:500;color:var(--ink-2);margin-left:.3em}
   .w-guest.cols2{display:grid;grid-template-columns:1fr 1fr;grid-column-gap:calc(var(--u)*2.4);grid-row-gap:.25em;align-content:start}
   .w-guest.cols2 .g + .g{margin-top:0}
+  .w-guest.cols3{display:grid;grid-template-columns:1fr 1fr 1fr;grid-column-gap:calc(var(--u)*1.6);grid-row-gap:.3em;align-content:start}
+  .w-guest.cols3 .g + .g{margin-top:0}
+  .w-guest.cols3 .g{white-space:nowrap}
+  .w-guest.cols3 .g small{font-size:.58em;margin-left:.2em}
+  .welcome.many .w-company{margin-top:calc(var(--u)*.6)}
+  .welcome.many .w-msg{margin-top:calc(var(--u)*1)}
   .w-msg{font-size:calc(var(--u)*1.6);color:var(--ink-2);margin-top:calc(var(--u)*1.4);font-weight:300;line-height:1.6;word-break:keep-all;max-width:44ch}
   .w-default .w-guest{font-size:calc(var(--u)*3.8);font-weight:500}
   .w-default .w-title{font-family:Outfit,sans-serif;letter-spacing:.04em}
@@ -397,8 +403,9 @@
     $("wTitle").textContent = state.title || "방문을 진심으로 환영합니다";
     $("wCompany").textContent = v.company || "";
     var n = guests.length;
-    g.className = "w-guest" + (n >= 2 ? " cols2" : "");
-    g.style.setProperty("--gs", n<=1 ? 5 : n<=4 ? 3.8 : n<=6 ? 3.3 : 2.8);
+    g.className = "w-guest" + (n >= 7 ? " cols3" : n >= 2 ? " cols2" : "");
+    if(n >= 7) box.className += " many";
+    g.style.setProperty("--gs", n<=1 ? 5 : n<=4 ? 3.8 : n<=6 ? 3.3 : 2.9);
     g.innerHTML = guests.map(function(x){ return '<div class="g">'+honor(x)+'</div>'; }).join("");
     $("wMsg").textContent = (v.message||"").trim() || state.message || "";
     var dots = "";
