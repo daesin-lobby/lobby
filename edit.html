@@ -44,11 +44,11 @@
   textarea{resize:vertical;min-height:70px}
 
   .guests{border:1px solid var(--line);border-radius:10px;overflow:hidden}
-  .grow-row{display:grid;grid-template-columns:1fr 1fr 40px;border-top:1px solid var(--line)}
+  .grow-row{display:grid;grid-template-columns:1.1fr .9fr 1.3fr 40px;border-top:1px solid var(--line)}
   .grow-row:first-child{border-top:0}
   .grow-row.head{background:#f7f8fa;font-size:12px;color:var(--ink-3);font-weight:500}
   .grow-row.head div{padding:7px 12px}
-  .grow-row input{border:0;border-radius:0;background:transparent;padding:11px 12px}
+  .grow-row input{border:0;border-radius:0;background:transparent;padding:11px 12px;min-width:0}
   .grow-row input + input{border-left:1px solid var(--line)}
   .grow-row button{border:0;border-left:1px solid var(--line);background:transparent;color:var(--ink-3);font-size:18px;cursor:pointer}
   .grow-row button:hover{color:var(--danger);background:#fdf1f1}
@@ -255,12 +255,17 @@
     return ["live","표시 중"];
   }
   function previewText(v){
-    var g = v.guests.filter(function(x){ return (x.name||"").trim(); }).map(function(x){
+    var named = v.guests.filter(function(x){ return (x.name||"").trim(); });
+    if(!named.length) return '<span style="color:var(--ink-3)">방문객 이름을 입력하면 여기 표시 예시가 나옵니다</span>';
+    // 업체별로 묶어서 보여줌 (업체 칸이 비면 상호명 사용)
+    var groups = [], idx = {};
+    named.forEach(function(x){
+      var co = (x.company||"").trim() || (v.company||"").trim();
+      if(!(co in idx)){ idx[co] = groups.length; groups.push({co:co, names:[]}); }
       var t = (x.title||"").trim(); if(t && !/님$/.test(t)) t += "님";
-      return x.name.trim()+" "+(t||"님");
+      groups[idx[co]].names.push(x.name.trim()+" "+(t||"님"));
     });
-    if(!g.length) return '<span style="color:var(--ink-3)">방문객 이름을 입력하면 여기 표시 예시가 나옵니다</span>';
-    return (v.company?"<b>"+esc(v.company)+"</b> · ":"")+esc(g.join(", "));
+    return groups.map(function(gr){ return (gr.co?"<b>"+esc(gr.co)+"</b> · ":"")+esc(gr.names.join(", ")); }).join("<br>");
   }
 
   function render(){
@@ -284,21 +289,22 @@
       card.innerHTML =
         '<div class="vhead"><span class="badge '+vs[0]+'">'+vs[1]+'</span><span class="grow"></span>'+
           '<button type="button" class="btn sm danger" data-act="del">삭제</button></div>'+
-        '<label class="f">상호명</label>'+
+        '<label class="f">상호명 <span style="font-weight:400;color:var(--ink-3)">— 방문객이 모두 같은 업체면 여기만 적으면 됩니다</span></label>'+
         '<input type="text" class="company" data-k="company" placeholder="예) ○○주식회사" value="'+esc(v.company)+'">'+
-        '<label class="f">방문객</label>'+
-        '<div class="guests"><div class="grow-row head"><div>이름</div><div>직급</div><div></div></div>'+
+        '<label class="f">방문객 <span style="font-weight:400;color:var(--ink-3)">— 업체가 서로 다르면 업체 칸에 각각 적으세요</span></label>'+
+        '<div class="guests"><div class="grow-row head"><div>이름</div><div>직급</div><div>업체</div><div></div></div>'+
           v.guests.map(function(g,i){
             return '<div class="grow-row"><input type="text" data-g="'+i+'" data-gk="name" placeholder="홍길동" value="'+esc(g.name)+'">'+
                    '<input type="text" data-g="'+i+'" data-gk="title" placeholder="대표" value="'+esc(g.title)+'">'+
+                   '<input type="text" data-g="'+i+'" data-gk="company" placeholder="'+esc((v.company||"").trim()||"업체명")+'" value="'+esc(g.company||"")+'">'+
                    '<button type="button" data-act="rmg" data-g="'+i+'" title="이 줄 삭제">×</button></div>';
           }).join("")+
         '</div>'+
         '<div class="chips"><button type="button" class="btn sm" data-act="addg">+ 방문객 추가</button>'+
           '<button type="button" class="btn sm" data-act="paste">여러 명 한 번에 붙여넣기</button></div>'+
-        '<div class="paste"><textarea placeholder="한 줄에 한 명씩: 이름 직급&#10;홍길동 대표&#10;김철수 상무"></textarea>'+
+        '<div class="paste"><textarea placeholder="한 줄에 한 명씩: 이름 직급 업체&#10;홍길동 대표 현대모비스&#10;김철수 상무 △△산업&#10;이영희 부장"></textarea>'+
           '<div class="chips"><button type="button" class="btn sm primary" data-act="pasteok">명단에 넣기</button></div>'+
-          '<p class="hint">엑셀에서 이름·직급 두 칸을 복사해 붙여넣어도 됩니다.</p></div>'+
+          '<p class="hint">업체는 생략하면 위 상호명으로 들어갑니다. 엑셀에서 이름·직급·업체 세 칸을 복사해 붙여넣어도 됩니다.</p></div>'+
         '<div class="row2">'+
           '<div><label class="f">표시 시작</label><input type="datetime-local" data-k="start" value="'+esc(v.start)+'"></div>'+
           '<div><label class="f">표시 종료</label><input type="datetime-local" data-k="end" value="'+esc(v.end)+'"></div>'+
@@ -339,7 +345,7 @@
         }
         return;
       }
-      if(act==="addg"){ v.guests.push({name:"",title:""}); markDirty(); renderVisits(); focusLast(v); return; }
+      if(act==="addg"){ v.guests.push({name:"",title:"",company:""}); markDirty(); renderVisits(); focusLast(v); return; }
       if(act==="rmg"){ v.guests.splice(+b.dataset.g,1); if(!v.guests.length) v.guests.push({name:"",title:""}); markDirty(); renderVisits(); return; }
       if(act==="paste"){ card.querySelector(".paste").classList.toggle("open"); card.querySelector(".paste textarea").focus(); return; }
       if(act==="pasteok"){
@@ -356,8 +362,10 @@
   // 붙여넣기 칸의 내용을 명단에 합침 (명단에 넣기를 안 눌러도 저장 시 자동 적용)
   function applyPaste(v){
     var rows = String(v._paste||"").split(/\r?\n/).map(function(l){ return l.trim(); }).filter(Boolean).map(function(l){
-      var parts = l.split(/\t|,|\s+/).filter(Boolean);
-      return {name:parts[0]||"", title:parts.slice(1).join(" ")};
+      // 탭·쉼표로 나뉘면 [이름, 직급, 업체], 띄어쓰기면 이름 / 직급 / 나머지는 업체
+      var parts = /\t|,/.test(l) ? l.split(/\t|,/).map(function(x){ return x.trim(); }) : l.split(/\s+/);
+      parts = parts.filter(function(x, i){ return x || i < 3; });
+      return {name:parts[0]||"", title:parts[1]||"", company:parts.slice(2).join(" ").trim()};
     });
     v._paste = "";
     if(!rows.length) return false;
@@ -403,7 +411,7 @@
       message: (board.message||"").trim(),
       visits: board.visits.map(function(v){
         return { id:v.id, company:(v.company||"").trim(),
-          guests: v.guests.filter(function(g){ return (g.name||"").trim(); }).map(function(g){ return {name:g.name.trim(), title:(g.title||"").trim()}; }),
+          guests: v.guests.filter(function(g){ return (g.name||"").trim(); }).map(function(g){ var o = {name:g.name.trim(), title:(g.title||"").trim()}; var c = (g.company||"").trim(); if(c) o.company = c; return o; }),
           start:v.start||"", end:v.end||"", message:(v.message||"").trim() };
       }).filter(function(v){ return v.guests.length; }),
       loc: board.loc,

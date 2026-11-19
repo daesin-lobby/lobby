@@ -122,6 +122,14 @@
   .w-dots i{width:calc(var(--u)*.6);height:calc(var(--u)*.6);border-radius:50%;background:rgba(216,178,106,.25);margin-left:calc(var(--u)*.5)}
   .w-dots i.on{background:var(--gold)}
 
+  /* 여러 업체 동시 방문 */
+  .w-guest.groups{display:grid;grid-template-columns:1fr;grid-row-gap:.55em;align-content:start}
+  .w-guest.groups.gcols2{grid-template-columns:1fr 1fr;grid-column-gap:calc(var(--u)*2.4)}
+  .grp-co{font-size:.6em;font-weight:500;color:var(--gold);letter-spacing:.01em;margin-bottom:.15em}
+  .grp-names{display:flex;flex-wrap:wrap}
+  .grp-names .g{margin:0 .9em .15em 0}
+  .grp-names .g + .g{margin-top:0}
+
   /* 달력 */
   .calendar{padding:calc(var(--u)*1.8) calc(var(--u)*2.4);display:flex;flex-direction:column;min-height:0}
   .cal-head{display:flex;align-items:baseline;justify-content:space-between}
@@ -401,12 +409,32 @@
     var guests = v.guests.filter(function(x){ return x && (x.name||"").trim(); });
     box.className = "card welcome vip";
     $("wTitle").textContent = state.title || "방문을 진심으로 환영합니다";
-    $("wCompany").textContent = v.company || "";
     var n = guests.length;
-    g.className = "w-guest" + (n >= 7 ? " cols3" : n >= 2 ? " cols2" : "");
-    if(n >= 7) box.className += " many";
-    g.style.setProperty("--gs", n<=1 ? 5 : n<=4 ? 3.8 : n<=6 ? 3.3 : 2.9);
-    g.innerHTML = guests.map(function(x){ return '<div class="g">'+honor(x)+'</div>'; }).join("");
+    // 업체별로 묶기 (방문객 업체가 비어 있으면 일정의 상호명을 사용)
+    var groups = [], idx = {};
+    guests.forEach(function(x){
+      var co = (x.company||"").trim() || (v.company||"").trim();
+      if(!(co in idx)){ idx[co] = groups.length; groups.push({co:co, list:[]}); }
+      groups[idx[co]].list.push(x);
+    });
+    if(groups.length <= 1){
+      $("wCompany").textContent = groups.length ? groups[0].co : (v.company||"");
+      g.className = "w-guest" + (n >= 7 ? " cols3" : n >= 2 ? " cols2" : "");
+      if(n >= 7) box.className += " many";
+      g.style.setProperty("--gs", n<=1 ? 5 : n<=4 ? 3.8 : n<=6 ? 3.3 : 2.9);
+      g.innerHTML = guests.map(function(x){ return '<div class="g">'+honor(x)+'</div>'; }).join("");
+    } else {
+      // 여러 업체: 업체명 아래에 그 업체 방문객을 나란히
+      $("wCompany").textContent = "";
+      var k = groups.length;
+      g.className = "w-guest groups" + (k >= 3 ? " gcols2" : "");
+      if(n >= 5) box.className += " many";
+      g.style.setProperty("--gs", n<=3 ? 3.6 : n<=6 ? 3.1 : 2.7);
+      g.innerHTML = groups.map(function(gr){
+        return '<div class="grp"><div class="grp-co">'+esc(gr.co||"")+'</div><div class="grp-names">'+
+          gr.list.map(function(x){ return '<div class="g">'+honor(x)+'</div>'; }).join("")+'</div></div>';
+      }).join("");
+    }
     $("wMsg").textContent = (v.message||"").trim() || state.message || "";
     var dots = "";
     if(list.length > 1) for(var i=0;i<list.length;i++) dots += '<i'+(i===slideIdx%list.length?' class="on"':'')+'></i>';
