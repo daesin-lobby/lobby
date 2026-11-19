@@ -184,7 +184,8 @@
   .ctrl button{background:var(--panel-2);color:var(--ink-2);border:1px solid var(--line);border-radius:8px;font:500 12px "Noto Sans KR";padding:7px 10px;cursor:pointer}
 
   /* 화면보호기 방지용 영상 (보이지 않음) */
-  .keepawake{position:fixed;left:0;bottom:0;width:4px;height:4px;opacity:.01;pointer-events:none;z-index:-1}
+  .keepawake{position:fixed;left:0;top:0;width:100vw;height:100vh;object-fit:cover;opacity:.02;pointer-events:none;z-index:-1}
+  .stage{position:relative;z-index:1}
 </style>
 </head>
 <body>
