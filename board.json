@@ -3,28 +3,22 @@
   "message": "귀한 걸음 해주셔서 감사합니다.",
   "visits": [
     {
-      "id": "radgidw",
-      "company": "",
+      "id": "t3c6ipo",
+      "company": "대한민군.....ㅇ",
       "guests": [
         {
-          "name": "Aira",
-          "title": "대표",
-          "company": "엔비디아"
+          "name": "김아문개",
+          "title": ""
         },
         {
-          "name": "마틸다",
-          "title": "이사",
-          "company": "구글"
-        },
-        {
-          "name": "마이클잭슨",
-          "title": "대리",
-          "company": "아마존"
+          "name": "이마윈ㅇㄹ",
+          "title": "",
+          "company": "일분"
         }
       ],
-      "start": "2026-11-19T11:41",
-      "end": "2026-11-19T14:41",
-      "message": "테스트지롱"
+      "start": "2026-11-19T11:54",
+      "end": "2026-11-19T14:54",
+      "message": ""
     }
   ],
   "loc": {
@@ -32,5 +26,5 @@
     "lat": 37.311,
     "lon": 126.745
   },
-  "updatedAt": "2026-11-19T02:52:22.057Z"
+  "updatedAt": "2026-11-19T02:54:29.489Z"
 }
