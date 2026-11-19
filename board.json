@@ -7,19 +7,19 @@
       "company": "",
       "guests": [
         {
-          "name": "삼숭전자",
+          "name": "Aira",
           "title": "대표",
-          "company": "홍길동이"
+          "company": "엔비디아"
         },
         {
-          "name": "이숭전자",
+          "name": "마틸다",
           "title": "이사",
-          "company": "김뫄뫄"
+          "company": "구글"
         },
         {
-          "name": "일숭전자",
+          "name": "마이클잭슨",
           "title": "대리",
-          "company": "뚜뚜뚜"
+          "company": "아마존"
         }
       ],
       "start": "2026-11-19T11:41",
@@ -32,5 +32,5 @@
     "lat": 37.311,
     "lon": 126.745
   },
-  "updatedAt": "2026-11-19T02:42:10.465Z"
+  "updatedAt": "2026-11-19T02:47:17.960Z"
 }
